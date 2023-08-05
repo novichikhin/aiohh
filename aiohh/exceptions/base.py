@@ -1,0 +1,2 @@
+class AiohhError(Exception):
+    pass
