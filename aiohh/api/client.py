@@ -57,8 +57,8 @@ class AiohhAPI(BaseAPI):
             await self._session.close()
 
     async def __call__(
-            self,
-            method: BaseMethod[ReturningType]
+        self,
+        method: BaseMethod[ReturningType]
     ) -> ReturningType:
         return await self._session(method=method, headers=self._headers)
 
