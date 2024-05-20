@@ -1,10 +1,6 @@
 from abc import ABC
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Extra
-)
+from pydantic import BaseModel, ConfigDict, Extra
 
 
 class BaseType(ABC, BaseModel):

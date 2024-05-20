@@ -7,17 +7,13 @@ from aiohh.api.base import (
     HH_OAUTH_TOKEN_HEADER_KEY,
     HH_USER_AGENT_HEADER_KEY,
     HH_OAUTH_TOKEN_HEADER_VALUE,
-    HH_USER_AGENT_HEADER_VALUE
+    HH_USER_AGENT_HEADER_VALUE,
 )
 from aiohh.client.session.aiohttp import AiohttpSession
 from aiohh.client.session.base import BaseSession, Session
 from aiohh.methods.base import BaseMethod, ReturningType
-from aiohh.methods import (
-    GetVacancy
-)
-from aiohh.types import (
-    Vacancy
-)
+from aiohh.methods import GetVacancy
+from aiohh.types import Vacancy
 
 
 class AiohhAPI(BaseAPI):
@@ -34,9 +30,8 @@ class AiohhAPI(BaseAPI):
                 oauth_token=oauth_token
             ),
             HH_USER_AGENT_HEADER_KEY: HH_USER_AGENT_HEADER_VALUE.format(
-                version=__version__,
-                email=email
-            )
+                version=__version__, email=email
+            ),
         }
 
         self._session = session
@@ -51,15 +46,12 @@ class AiohhAPI(BaseAPI):
         self,
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType]
+        exc_tb: Optional[TracebackType],
     ) -> None:
         if self._session is not None:
             await self._session.close()
 
-    async def __call__(
-        self,
-        method: BaseMethod[ReturningType]
-    ) -> ReturningType:
+    async def __call__(self, method: BaseMethod[ReturningType]) -> ReturningType:
         return await self._session(method=method, headers=self._headers)
 
     async def get_vacancy(self, vacancy_id: int) -> Vacancy:

@@ -17,15 +17,12 @@ class BaseAPI(ABC):
         raise NotImplementedError
 
     async def __aexit__(
-            self,
-            exc_type: Optional[Type[BaseException]],
-            exc_val: Optional[BaseException],
-            exc_tb: Optional[TracebackType]
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         raise NotImplementedError
 
-    async def __call__(
-        self,
-        method: BaseMethod[ReturningType]
-    ) -> ReturningType:
+    async def __call__(self, method: BaseMethod[ReturningType]) -> ReturningType:
         raise NotImplementedError

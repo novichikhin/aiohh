@@ -7,11 +7,7 @@ from aiohh.exceptions.api import APIError
 
 async def example_custom_session() -> None:
     session = AiohttpSession()
-    aiohh = AiohhAPI(
-        oauth_token="Test",
-        email="novichixinn@gmail.com",
-        session=session
-    )
+    aiohh = AiohhAPI(oauth_token="Test", email="novichixinn@gmail.com", session=session)
 
     try:
         vacancy = await aiohh.get_vacancy(vacancy_id=84190497)
@@ -25,10 +21,7 @@ async def example_custom_session() -> None:
 
 async def example_simple() -> None:
     aiohh: AiohhAPI
-    async with AiohhAPI(
-        oauth_token="Test",
-        email="novichixinn@gmail.com"
-    ) as aiohh:
+    async with AiohhAPI(oauth_token="Test", email="novichixinn@gmail.com") as aiohh:
         try:
             vacancy = await aiohh.get_vacancy(vacancy_id=84190497)
 
@@ -40,7 +33,7 @@ async def example_simple() -> None:
 async def main() -> None:
     tasks = [
         asyncio.create_task(example_custom_session()),
-        asyncio.create_task(example_simple())
+        asyncio.create_task(example_simple()),
     ]
 
     await asyncio.gather(*tasks)

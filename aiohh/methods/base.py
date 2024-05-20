@@ -1,11 +1,7 @@
 from abc import ABC
 from typing import Generic, TypeVar, ClassVar
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Extra
-)
+from pydantic import BaseModel, ConfigDict, Extra
 
 from aiohh.types.base import BaseType
 

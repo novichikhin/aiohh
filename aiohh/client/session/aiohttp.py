@@ -21,24 +21,20 @@ class AiohttpSession(BaseSession[aiohttp.ClientSession]):
             await self._session.close()
 
     async def __call__(
-        self,
-        method: BaseMethod[ReturningType],
-        headers: Mapping[str, Any]
+        self, method: BaseMethod[ReturningType], headers: Mapping[str, Any]
     ) -> ReturningType:
         self._session = self.create()
         request = self._build_request(method=method, headers=headers)
 
         try:
             async with self._session.request(
-                method=request.http_method,
-                url=request.url,
-                headers=request.headers
+                method=request.http_method, url=request.url, headers=request.headers
             ) as response:
                 built_response = self._build_response(
                     status_code=response.status,
                     body=await response.read(),
                     headers=response.headers,
-                    content_type=response.content_type
+                    content_type=response.content_type,
                 )
         except (asyncio.TimeoutError, aiohttp.ClientError):
             raise NetworkError

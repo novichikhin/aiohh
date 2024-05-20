@@ -1,15 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from http import HTTPStatus
-from typing import (
-    Generic,
-    TypeVar,
-    Any,
-    Optional,
-    Dict,
-    cast,
-    Mapping
-)
+from typing import Generic, TypeVar, Any, Optional, Dict, cast, Mapping
 
 from pydantic import BaseModel, ConfigDict
 
@@ -46,9 +38,7 @@ class BaseSession(ABC, Generic[Session]):
         self._session: Optional[Session] = None
 
     def _build_request(
-            self,
-            method: BaseMethod[ReturningType],
-            headers: Mapping[str, Any]
+        self, method: BaseMethod[ReturningType], headers: Mapping[str, Any]
     ) -> Request:
         dumped_model = method.model_dump()
 
@@ -59,27 +49,25 @@ class BaseSession(ABC, Generic[Session]):
             http_method=method.http_method,
             params=params,
             body=params or dumped_model,
-            headers=headers
+            headers=headers,
         )
 
     def _build_response(
-            self,
-            status_code: int,
-            body: bytes,
-            headers: Mapping[str, Any],
-            content_type: str
+        self,
+        status_code: int,
+        body: bytes,
+        headers: Mapping[str, Any],
+        content_type: str,
     ) -> Response:
         return Response(
             status_code=status_code,
             body=body,
             headers=headers,
-            content_type=content_type
+            content_type=content_type,
         )
 
     def _parse_response(
-            self,
-            method: BaseMethod[ReturningType],
-            response: Response
+        self, method: BaseMethod[ReturningType], response: Response
     ) -> ReturningType:
         try:
             content = cast(Dict[str, Any], json.loads(response.body))
@@ -89,19 +77,17 @@ class BaseSession(ABC, Generic[Session]):
         if HTTPStatus.OK <= response.status_code <= HTTPStatus.IM_USED:
             return cast(
                 ReturningType,
-                method.__returning__.model_validate(content)  # type: ignore
+                method.__returning__.model_validate(content),  # type: ignore
             )
 
         raise APIError(
             method=method,
             status_code=response.status_code,
-            detailed_errors=content.get("errors", [])
+            detailed_errors=content.get("errors", []),
         )
 
     async def __call__(
-            self,
-            method: BaseMethod[ReturningType],
-            headers: Mapping[str, Any]
+        self, method: BaseMethod[ReturningType], headers: Mapping[str, Any]
     ) -> ReturningType:
         raise NotImplementedError
 
