@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aiohh"
-version = "1.0.0"
+version = "1.0.1"
 description = "Asynchronous API wrapper for hh.ru"
 authors = ["Danila Novichikhin <novichixinn@gmail.com>"]
 license = "MIT"
