@@ -5,8 +5,6 @@
 
 ## Методы
 
-Покрыты все методы публичной спецификации hh.ru, кроме помеченных устаревшими.
-
 | Раздел | Методы |
 | --- | --- |
 | Авторизация | `get_user_token`, `refresh_user_token`, `get_application_token`, `invalidate_token`, `get_me` |
