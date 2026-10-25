@@ -2,6 +2,12 @@
     <img height="75" src="https://raw.githubusercontent.com/novichikhin/aiohh/main/resources/aiohh-logo.png"/>
 </p>
 <p align="center"><b>aiohh</b> – async api wrapper for hh.ru</p>
+<p align="center">
+    <a href="https://pypi.org/project/aiohh/"><img src="https://img.shields.io/pypi/v/aiohh" alt="PyPI"/></a>
+    <a href="https://pypi.org/project/aiohh/"><img src="https://img.shields.io/pypi/pyversions/aiohh" alt="Python"/></a>
+    <a href="https://github.com/novichikhin/aiohh/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/novichikhin/aiohh/ci.yml?branch=main" alt="CI"/></a>
+    <a href="https://github.com/novichikhin/aiohh/blob/main/LICENSE"><img src="https://img.shields.io/pypi/l/aiohh" alt="License"/></a>
+</p>
 
 ## Методы
 
@@ -27,3 +33,13 @@
 | Webhooks | `get_webhook_subscriptions`, `create_webhook_subscription`, `update_webhook_subscription`, `delete_webhook_subscription` |
 | Звонки | `get_calls_history`, `get_call_link`, `search_call_transcripts` |
 | Статистика | `get_clickme_statistics`, `get_salary_evaluation`, `get_salary_industries`, `get_salary_professional_areas`, `get_salary_employee_levels`, `get_salary_areas` |
+
+## Примеры
+
+| Пример | Что показывает |
+| --- | --- |
+| [simple.py](https://github.com/novichikhin/aiohh/blob/main/examples/simple.py) | Запросы без авторизации: подсказки, справочники, похожие вакансии |
+| [oauth.py](https://github.com/novichikhin/aiohh/blob/main/examples/oauth.py) | Авторизация пользователя через OAuth с PKCE и обновление токена |
+| [pagination.py](https://github.com/novichikhin/aiohh/blob/main/examples/pagination.py) | Постраничный поиск вакансий и параллельные запросы через `asyncio.gather` |
+| [employer.py](https://github.com/novichikhin/aiohh/blob/main/examples/employer.py) | Активные вакансии работодателя и новые отклики на них |
+| [webhooks.py](https://github.com/novichikhin/aiohh/blob/main/examples/webhooks.py) | Создание, просмотр и удаление webhook-подписок |
