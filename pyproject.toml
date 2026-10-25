@@ -3,7 +3,9 @@ name = "aiohh"
 version = "0.2.0"
 description = "Asynchronous API wrapper for hh.ru"
 authors = ["Danila Novichikhin <novichixinn@gmail.com>"]
+license = "MIT"
 readme = "README.md"
+repository = "https://github.com/novichikhin/aiohh"
 packages = [{ include = "aiohh" }]
 keywords = ["hh.ru", "headhunter", "api", "asyncio", "aiohttp"]
 classifiers = [
