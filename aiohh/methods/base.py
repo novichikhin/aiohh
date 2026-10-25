@@ -1,17 +1,23 @@
-from abc import ABC
-from typing import Generic, TypeVar, ClassVar
+from typing import Any, ClassVar, Generic, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Extra
+from pydantic import BaseModel, ConfigDict
 
-from aiohh.types.base import BaseType
+from aiohh.enums.body_format import BodyFormat
+from aiohh.enums.host import Host
+from aiohh.enums.http_method import HTTPMethod
 
-ReturningType = TypeVar("ReturningType", bound=BaseType)
+ReturningType = TypeVar("ReturningType")
 
 
-class BaseMethod(ABC, BaseModel, Generic[ReturningType]):
-    model_config = ConfigDict(extra=Extra.allow, frozen=True)
+class BaseMethod(BaseModel, Generic[ReturningType]):
+    model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True)
 
-    __returning__: ClassVar[type]
+    __returning__: ClassVar[Any]
+    __http_method__: ClassVar[HTTPMethod] = HTTPMethod.GET
+    __endpoint__: ClassVar[str]
+    __body_format__: ClassVar[BodyFormat] = BodyFormat.JSON
+    __query__: ClassVar[frozenset[str]] = frozenset()
+    __authorized__: ClassVar[bool] = True
 
-    url: ClassVar[str]
-    http_method: ClassVar[str]
+    host: Host | None = None
+    locale: str | None = None

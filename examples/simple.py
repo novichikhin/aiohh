@@ -1,42 +1,32 @@
 import asyncio
+import os
 
 from aiohh.api.client import AiohhAPI
-from aiohh.client.session.aiohttp import AiohttpSession
 from aiohh.exceptions.api import APIError
 
-
-async def example_custom_session() -> None:
-    session = AiohttpSession()
-    aiohh = AiohhAPI(oauth_token="Test", email="novichixinn@gmail.com", session=session)
-
-    try:
-        vacancy = await aiohh.get_vacancy(vacancy_id=84190497)
-
-        print(vacancy.name)
-    except APIError as err:
-        print(err.status_code, err.detailed_errors)
-    finally:
-        await session.close()
-
-
-async def example_simple() -> None:
-    aiohh: AiohhAPI
-    async with AiohhAPI(oauth_token="Test", email="novichixinn@gmail.com") as aiohh:
-        try:
-            vacancy = await aiohh.get_vacancy(vacancy_id=84190497)
-
-            print(vacancy.name)
-        except APIError as err:
-            print(err.status_code, err.detailed_errors)
+USER_AGENT = os.environ["HH_USER_AGENT"]
 
 
 async def main() -> None:
-    tasks = [
-        asyncio.create_task(example_custom_session()),
-        asyncio.create_task(example_simple()),
-    ]
+    async with AiohhAPI(user_agent=USER_AGENT) as api:
+        areas = await api.suggest_areas("Моск")
 
-    await asyncio.gather(*tasks)
+        for area in areas.items:
+            print(area.id, area.text)
+
+        dictionaries = await api.get_dictionaries()
+
+        for experience in dictionaries.experience:
+            print(experience.id, experience.name)
+
+        try:
+            page = await api.get_similar_vacancies(84190497, per_page=5)
+        except APIError as error:
+            print(error)
+            return
+
+        for vacancy in page.items:
+            print(vacancy.name, vacancy.salary_range)
 
 
 if __name__ == "__main__":

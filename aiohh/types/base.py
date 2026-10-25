@@ -1,7 +1,5 @@
-from abc import ABC
-
-from pydantic import BaseModel, ConfigDict, Extra
+from pydantic import BaseModel, ConfigDict
 
 
-class BaseType(ABC, BaseModel):
-    model_config = ConfigDict(extra=Extra.allow, frozen=True)
+class BaseType(BaseModel):
+    model_config = ConfigDict(extra="allow", frozen=True, validate_by_name=True)

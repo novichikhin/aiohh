@@ -1,17 +1,26 @@
 [tool.poetry]
 name = "aiohh"
-version = "0.1.0"
-description = ""
-authors = ["Danila Novichikhin"]
+version = "0.2.0"
+description = "Asynchronous API wrapper for hh.ru"
+authors = ["Danila Novichikhin <novichixinn@gmail.com>"]
 readme = "README.md"
+packages = [{ include = "aiohh" }]
+keywords = ["hh.ru", "headhunter", "api", "asyncio", "aiohttp"]
+classifiers = [
+    "Framework :: AsyncIO",
+    "Typing :: Typed",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-aiohttp = "^3.8.5"
-pydantic = "^2.0.3"
-black = "^24.4.2"
-ruff = "^0.4.4"
-pre-commit = "^3.7.1"
+aiohttp = "^3.12"
+pydantic = "^2.11"
+
+[tool.poetry.group.dev.dependencies]
+black = "^26.5"
+ruff = "^0.16"
+mypy = "^2.3"
+pre-commit = "^4.6"
 
 
 [build-system]
@@ -19,5 +28,17 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 
+[tool.black]
+target-version = ["py310"]
+
+[tool.ruff]
+target-version = "py310"
+
 [tool.ruff.lint]
-ignore = ["F401"]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+plugins = ["pydantic.mypy"]

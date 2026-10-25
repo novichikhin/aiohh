@@ -1,100 +1,155 @@
-import json
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from functools import lru_cache
 from http import HTTPStatus
-from typing import Generic, TypeVar, Any, Optional, Dict, cast, Mapping
+from string import Formatter
+from typing import Any, cast
+from urllib.parse import quote
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import TypeAdapter, ValidationError
 
-from aiohh.exceptions.api import APIError
+from aiohh.enums.body_format import BodyFormat
+from aiohh.enums.http_method import HTTPMethod
+from aiohh.exceptions.api import create_api_error
 from aiohh.exceptions.decode import ClientDecodeError
 from aiohh.methods.base import BaseMethod, ReturningType
 
-Session = TypeVar("Session", bound=Any)
+DEFAULT_API_URL = "https://api.hh.ru"
+DEFAULT_TIMEOUT = 60.0
+
+QUERY_FIELDS = frozenset({"host", "locale"})
+BODY_HTTP_METHODS = frozenset({HTTPMethod.POST, HTTPMethod.PUT})
 
 
-class Request(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+@dataclass(frozen=True)
+class Request:
+    http_method: HTTPMethod
     url: str
-    http_method: str
+    headers: dict[str, str] = field(default_factory=dict)
+    params: list[tuple[str, str]] = field(default_factory=list)
+    json: Any = None
+    data: list[tuple[str, str]] | None = None
 
-    params: Optional[Dict[str, Any]] = None
-    body: Optional[Dict[str, Any]] = None
-    headers: Dict[str, Any] = {}
 
-
-class Response(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+@dataclass(frozen=True)
+class Response:
     status_code: int
-    body: bytes
-    headers: Mapping[str, Any]
-    content_type: str
+    content: bytes
 
 
-class BaseSession(ABC, Generic[Session]):
+@lru_cache
+def get_type_adapter(returning: Any) -> TypeAdapter[Any]:
+    return TypeAdapter(returning)
 
-    def __init__(self):
-        self._session: Optional[Session] = None
 
-    def _build_request(
-        self, method: BaseMethod[ReturningType], headers: Mapping[str, Any]
-    ) -> Request:
-        dumped_model = method.model_dump()
+def get_endpoint_fields(endpoint: str) -> set[str]:
+    return {name for _, name, _, _ in Formatter().parse(endpoint) if name}
 
-        params = dumped_model if method.http_method == "GET" else None
 
-        return Request(
-            url=method.url.format(**dumped_model),
-            http_method=method.http_method,
-            params=params,
-            body=params or dumped_model,
-            headers=headers,
-        )
+def encode_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
 
-    def _build_response(
-        self,
-        status_code: int,
-        body: bytes,
-        headers: Mapping[str, Any],
-        content_type: str,
-    ) -> Response:
-        return Response(
-            status_code=status_code,
-            body=body,
-            headers=headers,
-            content_type=content_type,
-        )
+    return str(value)
 
-    def _parse_response(
-        self, method: BaseMethod[ReturningType], response: Response
-    ) -> ReturningType:
-        try:
-            content = cast(Dict[str, Any], json.loads(response.body))
-        except json.JSONDecodeError:
-            raise ClientDecodeError
 
-        if HTTPStatus.OK <= response.status_code <= HTTPStatus.IM_USED:
-            return cast(
-                ReturningType,
-                method.__returning__.model_validate(content),  # type: ignore
-            )
+def encode_params(values: dict[str, Any]) -> list[tuple[str, str]]:
+    params = []
 
-        raise APIError(
-            method=method,
-            status_code=response.status_code,
-            detailed_errors=content.get("errors", []),
-        )
+    for name, value in values.items():
+        for item in value if isinstance(value, list) else [value]:
+            if isinstance(item, dict):
+                params.extend(encode_params(item))
+            else:
+                params.append((name, encode_value(item)))
+
+    return params
+
+
+class BaseSession(ABC):
+    def __init__(
+        self, api_url: str = DEFAULT_API_URL, timeout: float = DEFAULT_TIMEOUT
+    ) -> None:
+        self.api_url = api_url.rstrip("/")
+        self.timeout = timeout
 
     async def __call__(
-        self, method: BaseMethod[ReturningType], headers: Mapping[str, Any]
+        self, method: BaseMethod[ReturningType], headers: dict[str, str]
     ) -> ReturningType:
-        raise NotImplementedError
+        request = self.build_request(method=method, headers=headers)
+        response = await self.send(request)
+
+        return self.parse_response(method=method, response=response)
 
     @abstractmethod
-    def create(self) -> Session:
+    async def send(self, request: Request) -> Response:
         raise NotImplementedError
 
     @abstractmethod
     async def close(self) -> None:
         raise NotImplementedError
+
+    def build_request(
+        self, method: BaseMethod[Any], headers: dict[str, str]
+    ) -> Request:
+        values = method.model_dump(mode="json", by_alias=True, exclude_none=True)
+        endpoint_fields = get_endpoint_fields(method.__endpoint__)
+
+        endpoint = method.__endpoint__.format(
+            **{name: quote(str(values.pop(name)), safe="") for name in endpoint_fields}
+        )
+
+        if method.__http_method__ not in BODY_HTTP_METHODS:
+            return Request(
+                http_method=method.__http_method__,
+                url=f"{self.api_url}{endpoint}",
+                headers=headers,
+                params=encode_params(values),
+            )
+
+        query_fields = QUERY_FIELDS | method.__query__
+        query = {name: value for name, value in values.items() if name in query_fields}
+        body = {
+            name: value for name, value in values.items() if name not in query_fields
+        }
+
+        if method.__body_format__ is BodyFormat.FORM:
+            return Request(
+                http_method=method.__http_method__,
+                url=f"{self.api_url}{endpoint}",
+                headers=headers,
+                params=encode_params(query),
+                data=encode_params(body),
+            )
+
+        return Request(
+            http_method=method.__http_method__,
+            url=f"{self.api_url}{endpoint}",
+            headers=headers,
+            params=encode_params(query),
+            json=body,
+        )
+
+    def parse_response(
+        self, method: BaseMethod[ReturningType], response: Response
+    ) -> ReturningType:
+        if not HTTPStatus.OK <= response.status_code < HTTPStatus.MULTIPLE_CHOICES:
+            raise create_api_error(
+                method=method,
+                status_code=response.status_code,
+                content=response.content,
+            )
+
+        if method.__returning__ is None:
+            return cast(ReturningType, None)
+
+        try:
+            result = get_type_adapter(method.__returning__).validate_json(
+                response.content
+            )
+        except ValidationError as error:
+            raise ClientDecodeError(
+                f"Failed to decode response of {type(method).__name__}: {error}"
+            ) from error
+
+        return cast(ReturningType, result)
